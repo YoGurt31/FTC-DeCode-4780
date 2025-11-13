@@ -1,13 +1,10 @@
 package Auton;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.Range;
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 import java.util.List;
 
@@ -32,7 +29,11 @@ public class BasicMotif extends LinearOpMode {
 
         robot.init(hardwareMap);
 
-        FtcDashboard.getInstance().startCameraStream(robot.vision.visionPortal, 20);
+        // Active If Using WebCam
+        // FtcDashboard.getInstance().startCameraStream(robot.vision.visionPortal, 20);
+
+        // Active If Using LimeLight
+        FtcDashboard.getInstance().startCameraStream(robot.vision.limeLight, 30);
 
         telemetry.addLine("Status: Initialized. Ready to start.");
         telemetry.update();
@@ -49,53 +50,45 @@ public class BasicMotif extends LinearOpMode {
             robot.driveTrain.turnToHeading(this, 180.0, 0.35);
 
             // 3) Search For AprilTag
-            AprilTagDetection targetTag = null;
+            LLResult targetResult = null;
             long searchStart = System.currentTimeMillis();
-            while (opModeIsActive() && (System.currentTimeMillis() - searchStart) < 3000 && targetTag == null) {
-                List<AprilTagDetection> detections = robot.vision.aprilTag.getDetections();
-                for (AprilTagDetection det : detections) {
-                    if (det.metadata != null) {
-                        targetTag = det;
-                        break;
-                    }
-                }
-                telemetry.addData("Tag Search", targetTag == null ? "Searching" : ("Found ID " + targetTag.id));
+
+            while (opModeIsActive() && (System.currentTimeMillis() - searchStart) < 3000) {
+                targetResult = robot.vision.limeLight.getLatestResult();
+                boolean hasTarget = targetResult != null && targetResult.isValid();
+
+                telemetry.addData("LimeLight Search", hasTarget ? "Target in View" : "Searching");
+                if (hasTarget) break;
+
                 telemetry.update();
                 idle();
             }
 
             // 4) If Tag Found, Align To It
-            if (opModeIsActive() && targetTag != null) {
+            if (opModeIsActive() && targetResult != null && targetResult.isValid()) {
                 // TODO: Tune Values
-                double desiredRange = 12.0;
+                double desiredRange = 0.0; // TY VALUE READ @ SPECIFIC POSITION - For 24 In, Read TY Value When Robot Is 24 In From Target
                 double driveGain = 0.020;
                 double rotateGain = 0.010;
                 double maxDrive = 0.50;
                 double maxRotate = 0.25;
 
                 long alignStart = System.currentTimeMillis();
-                while (opModeIsActive() && (System.currentTimeMillis() - alignStart) < 5000) {
-                    List<AprilTagDetection> detections = robot.vision.aprilTag.getDetections();
-                    AprilTagDetection current = null;
-                    for (AprilTagDetection det : detections) {
-                        if (det.id == targetTag.id) {
-                            current = det;
-                            break;
-                        }
-                    }
-                    if (current == null || current.metadata == null) break;
+                while (opModeIsActive() && (System.currentTimeMillis() - alignStart) < 3000) {
+                    LLResult current = robot.vision.limeLight.getLatestResult();
+                    if (current == null || !current.isValid()) break;
 
-                    double rangeError = current.ftcPose.range - desiredRange;
-                    double bearingError = current.ftcPose.bearing; // degrees
+                    double rangeError    = targetResult.getTy() - desiredRange;
+                    double headingError  = targetResult.getTx();
 
                     double driveCmd = Range.clip(rangeError * driveGain, -maxDrive, maxDrive);
-                    double rotateCmd = Range.clip(bearingError * rotateGain, -maxRotate, maxRotate);
+                    double rotateCmd = Range.clip(headingError * rotateGain, -maxRotate, maxRotate);
 
                     robot.driveTrain.tankDrive(driveCmd, rotateCmd);
 
-                    telemetry.addData("Align ID", current.id);
-                    telemetry.addData("Range", "%5.1f", current.ftcPose.range);
-                    telemetry.addData("Bearing", "%5.1f", current.ftcPose.bearing);
+                    telemetry.addData("Align", "Drive %.2f, Turn %.2f", driveCmd, rotateCmd);
+                    telemetry.addData("Range Error", targetResult.getTy());
+                    telemetry.addData("Heading Error", targetResult.getTx());
                     telemetry.update();
                     idle();
                 }
@@ -133,6 +126,9 @@ public class BasicMotif extends LinearOpMode {
             robot.scoringMechanisms.rightRelease.setPosition(artifactHold);
             robot.scoringMechanisms.flyWheel1.setPower(0);
             robot.scoringMechanisms.flyWheel2.setPower(0);
+
+            telemetry.update();
         }
+        robot.vision.limeLight.stop();
     }
 }

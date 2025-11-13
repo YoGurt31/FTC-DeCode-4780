@@ -1,14 +1,10 @@
 package TeleOp;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
-
-import java.util.List;
 
 import Systems.Robot;
 
@@ -54,7 +50,7 @@ public class TeleOpBasic extends LinearOpMode {
 
     // AprilTag / Vision Variables
     // TODO: Tune Values
-    final double distance = 12.0; // Distance To Reach From AprilTag (In Inches)
+    final double desiredRange = 0.0; // TY VALUE READ @ SPECIFIC POSITION - For 24 In, Read TY Value When Robot Is 24 In From Target
 
     final double driveGain  =  0.020;
     final double rotateGain =  0.010;
@@ -67,10 +63,13 @@ public class TeleOpBasic extends LinearOpMode {
 
         robot.init(hardwareMap);
 
-        FtcDashboard.getInstance().startCameraStream(robot.vision.visionPortal, 20);
+        // Active If Using WebCam
+        // FtcDashboard.getInstance().startCameraStream(robot.vision.visionPortal, 20);
+
+        // Active If Using LimeLight
+         FtcDashboard.getInstance().startCameraStream(robot.vision.limeLight, 30);
 
         double drive = 0, rotate = 0;
-        boolean targetFound = false;
 
         telemetry.addLine("Status: Initialized. Ready to start.");
         telemetry.update();
@@ -82,39 +81,25 @@ public class TeleOpBasic extends LinearOpMode {
 
             // AprilTag Targeting
             boolean activeTargeting = gamepad1.left_bumper;
+            LLResult result = robot.vision.limeLight.getLatestResult();
+            boolean hasTarget = result != null && result.isValid();
 
-            List<AprilTagDetection> currentDetections = robot.vision.aprilTag.getDetections();
-            for (AprilTagDetection detection : currentDetections) {
-                if (detection.metadata != null) {
-                    if (detection.id == -1) { // -1 Refers to ANY Tag
-                        targetFound = true;
-                        robot.vision.desiredTag = detection;
-                        break;
-                    }
-                } else {
-                    telemetry.addData("Unknown", "Tag ID %d is not in TagLibrary", detection.id);
-                }
-            }
-
-            if (targetFound) {
-                telemetry.addData("Found", "ID %d (%s)", robot.vision.desiredTag.id, robot.vision.desiredTag.metadata.name);
-                telemetry.addData("Range",  "%5.1f inches", robot.vision.desiredTag.ftcPose.range);
-                telemetry.addData("Bearing","%3.0f degrees", robot.vision.desiredTag.ftcPose.bearing);
-                telemetry.addData("Yaw","%3.0f degrees", robot.vision.desiredTag.ftcPose.yaw);
-            }
-
-            if (activeTargeting && targetFound) {
-                double rangeError    = (robot.vision.desiredTag.ftcPose.range - distance);
-                double headingError  = (robot.vision.desiredTag.ftcPose.bearing);
+            if (activeTargeting && hasTarget) {
+                double rangeError    = result.getTy() - desiredRange;
+                double headingError  = result.getTx();
 
                 drive  = Range.clip(rangeError * driveGain, -maxDrive, maxDrive);
                 rotate = Range.clip(headingError * rotateGain, -maxRotate, maxRotate);
 
+                telemetry.addData("Limelight", "Tracking");
+                telemetry.addData("Range Error", result.getTy());
+                telemetry.addData("Heading Error", result.getTx());
                 telemetry.addData("Auto","Drive %5.2f, Turn %5.2f ", drive, rotate);
             } else {
                 drive  = -gamepad1.right_stick_y;
                 rotate = -gamepad1.left_stick_x;
 
+                telemetry.addData("Limelight", hasTarget ? "Target in View" : "No Target");
                 telemetry.addData("Manual","Drive %5.2f, Turn %5.2f ", drive, rotate);
             }
 
@@ -177,6 +162,9 @@ public class TeleOpBasic extends LinearOpMode {
             telemetry.addData("Flywheel RPS (Target)", targetRPS);
             telemetry.addData("Left Release", ((robot.scoringMechanisms.leftRelease.getPosition()  <= 0.05) ? "Open" : "Closed"));
             telemetry.addData("Right Release", ((robot.scoringMechanisms.rightRelease.getPosition()  <= 0.05) ? "Open" : "Closed"));
+
+            telemetry.update();
         }
+        robot.vision.limeLight.stop();
     }
 }
