@@ -37,8 +37,8 @@ import Systems.Robot;
  * @Author Gurej Singh
  */
 
-@TeleOp(name = "Tank", group = "TeleOp")
-public class TeleOpBasic extends LinearOpMode {
+@TeleOp(name = "BLUE", group = "TeleOp")
+public class TeleOpBlue extends LinearOpMode {
 
     // Robot Instance
     private final Robot robot = new Robot();
@@ -70,6 +70,7 @@ public class TeleOpBasic extends LinearOpMode {
         // Active If Using LimeLight
         FtcDashboard.getInstance().startCameraStream(robot.vision.limeLight, 30);
         robot.vision.limeLight.setPollRateHz(90);
+        robot.vision.limeLight.pipelineSwitch(2);
 
         double drive = 0, rotate = 0;
 
@@ -86,9 +87,9 @@ public class TeleOpBasic extends LinearOpMode {
             // AprilTag Targeting
             boolean activeTargeting = gamepad1.left_trigger >= 0.5;
             LLResult result = robot.vision.limeLight.getLatestResult();
-            boolean hasTarget = result != null && result.isValid();
+            boolean hasTarget = (result != null && result.isValid()) && (result.getFiducialResults() != null && !result.getFiducialResults().isEmpty());
 
-            if (activeTargeting && hasTarget) {
+            if (activeTargeting && hasTarget && (result.getFiducialResults().get(0).getFiducialId() == 20)) {
                 double headingError = result.getTx();
 
                 drive = -gamepad1.left_stick_y;
