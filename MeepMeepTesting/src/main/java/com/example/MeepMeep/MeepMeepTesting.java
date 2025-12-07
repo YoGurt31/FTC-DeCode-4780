@@ -24,18 +24,19 @@ public class MeepMeepTesting {
                 .setConstraints(75, 50, Math.toRadians(180), Math.toRadians(180), 15)
                 .build();
 
-        LinSanity.runAction(LinSanity.getDrive().actionBuilder(new Pose2d(-16, -54, Math.toRadians(90)))
+        LinSanity.runAction(LinSanity.getDrive().actionBuilder(new Pose2d(-16, -64, Math.toRadians(90)))
 
                 // Read Motif AprilTag And Store Motif
 
-                // Aim Towards Depot
+                // Drive Forward + Aim Towards Depot
+                .lineToY(-54)
                 .turnTo(Math.toRadians(105))
 
                 // Shoot Motif In Order
 
                 // Go Towards Nearest Artifact Line
-                .splineTo(new Vector2d(-16, -36), Math.toRadians(0))
-                .waitSeconds(1)
+                .splineTo(new Vector2d(-24, -12.5), Math.toRadians(105))
+                .turnTo(Math.toRadians(0))
 
                 // Collect Artifacts
                 .setReversed(true)
@@ -44,7 +45,7 @@ public class MeepMeepTesting {
 
                 // Return To Shooting Position
                 .setReversed(false)
-                .splineTo(new Vector2d(-24, -36), Math.toRadians(0))
+                .splineTo(new Vector2d(-36, -36), Math.toRadians(0))
                 .splineTo(new Vector2d(-16, -54), Math.toRadians(105))
 
                 // Lock On To AprilTag (ONLY HEADING CORRECTION)

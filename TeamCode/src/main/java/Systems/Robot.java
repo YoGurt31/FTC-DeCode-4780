@@ -64,13 +64,13 @@ public class Robot {
             backLeft.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
             backRight.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
 
-            // PinPoint Localizer
-            pinPoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
-            pinPoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
-            pinPoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-            pinPoint.setOffsets(-176, -66, DistanceUnit.MM); // TODO: Tune Values
-            pinPoint.resetPosAndIMU();
-            pinPoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
+//            // PinPoint Localizer
+//            pinPoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+//            pinPoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+//            pinPoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+//            pinPoint.setOffsets(-176, -66, DistanceUnit.MM); // TODO: Tune Values
+//            pinPoint.resetPosAndIMU();
+//            pinPoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
 
             // GearShift SetUp // TODO: Tune
             gearShiftLeft = hardwareMap.get(Servo.class, "gearShiftLeft");

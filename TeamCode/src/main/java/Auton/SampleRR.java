@@ -19,43 +19,20 @@ public class SampleRR extends LinearOpMode {
         Pose2d initialPose = new Pose2d(0, 0, Math.toRadians(90));
         TankDrive drive = new TankDrive(hardwareMap, initialPose);
 
-        TrajectoryActionBuilder Run = drive.actionBuilder(initialPose)
-                // Read Motif AprilTag And Store Motif
-
-                // Aim Towards Depot
-                .turnTo(Math.toRadians(105))
-
-                // Shoot Motif In Order
-
-                // Go Towards Nearest Artifact Line
-                .splineTo(new Vector2d(-16, -36), Math.toRadians(0))
-                .waitSeconds(1)
-
-                // Collect Artifacts
-                .setReversed(true)
-                .lineToX(-60)
-                .waitSeconds(2)
-
-                // Return To Shooting Position
-                .setReversed(false)
-                .splineTo(new Vector2d(-24, -36), Math.toRadians(0))
-                .splineTo(new Vector2d(-16, -54), Math.toRadians(105))
-
-                // Lock On To AprilTag (ONLY HEADING CORRECTION)
-                .waitSeconds(2)
-
-                // Shoot Motif In Order
-                .waitSeconds(5);
-
         waitForStart();
 
         if (isStopRequested()) return;
 
-        Action trajectoryActionChosen;
-        Actions.runBlocking(
-                new SequentialAction(
-                        trajectoryActionChosen = Run.build()
-                )
-        );
+        Action squareDrive = drive.actionBuilder(initialPose)
+                .lineToY(24)
+                .turnTo(Math.toRadians(0))
+                .lineToX(24)
+                .turnTo(Math.toRadians(270))
+                .lineToY(0)
+                .turnTo(Math.toRadians(180))
+                .lineToX(0)
+                .turnTo(Math.toRadians(90))
+                .build();
+        Actions.runBlocking(squareDrive);
     }
 }
