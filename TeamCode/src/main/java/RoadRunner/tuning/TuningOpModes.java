@@ -45,7 +45,7 @@ import RoadRunner.Irrelavent.OTOSLocalizer;
 import RoadRunner.PinpointLocalizer;
 import RoadRunner.TankDrive;
 import RoadRunner.Irrelavent.ThreeDeadWheelLocalizer;
-import RoadRunner.Irrelavent.TwoDeadWheelLocalizer;
+import RoadRunner.TwoDeadWheelLocalizer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
