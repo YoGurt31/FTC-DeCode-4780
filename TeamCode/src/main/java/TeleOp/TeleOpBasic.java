@@ -3,6 +3,7 @@ package TeleOp;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -40,7 +41,7 @@ import Systems.Robot;
  */
 
 @TeleOp(name = "TestTank", group = "TeleOp")
-@Disabled
+//@Disabled
 public class TeleOpBasic extends LinearOpMode {
 
     // Robot Instance
@@ -67,13 +68,14 @@ public class TeleOpBasic extends LinearOpMode {
 
     // Telemetry Variables
     long lastTelemetryUpdate = 0;
-    final long telemetryInterval = 500;
+    final long telemetryInterval = 250;
 
     @Override
     public void runOpMode() {
 
         robot.init(hardwareMap);
 
+        FtcDashboard.getInstance().startCameraStream(robot.vision.limeLight, 30);
         robot.vision.limeLight.setPollRateHz(15);
 
         double drive, rotate;
