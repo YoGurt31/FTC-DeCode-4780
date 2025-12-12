@@ -3,14 +3,9 @@ package TeleOp;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
-import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 import Systems.Robot;
 
@@ -195,9 +190,9 @@ public class TeleOpBasic extends LinearOpMode {
             if (now - lastTelemetryUpdate >= telemetryInterval) {
                 // Drive / AimBot
                 telemetry.addLine("=== Drive + AimBot ===");
-                telemetry.addData("X Pos", "%5.2f", robot.driveTrain.pinPoint.getPosition().getX(DistanceUnit.INCH));
-                telemetry.addData("Y Pos", "%5.2f", robot.driveTrain.pinPoint.getPosition().getY(DistanceUnit.INCH));
-                telemetry.addData("Angle", "%5.2f", robot.driveTrain.pinPoint.getPosition().getHeading(AngleUnit.DEGREES));
+//                telemetry.addData("X Pos", "%5.2f", robot.driveTrain.pinPoint.getPosition().getX(DistanceUnit.INCH));
+//                telemetry.addData("Y Pos", "%5.2f", robot.driveTrain.pinPoint.getPosition().getY(DistanceUnit.INCH));
+//                telemetry.addData("Angle", "%5.2f", robot.driveTrain.pinPoint.getPosition().getHeading(AngleUnit.DEGREES));
                 telemetry.addData("AimBot Active", activeTargeting && hasTarget);
                 telemetry.addData("Tag In View", hasTarget);
                 telemetry.addData("Tag Area", hasTarget ? result.getTa() : 0.0);

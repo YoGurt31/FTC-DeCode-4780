@@ -1,43 +1,12 @@
 package TeleOp;
 
-import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-
 import Systems.Robot;
-
-/**
- * Title: TeleOpBasic - Designed for FTC Decode 2025-26
- * Desc: Basic TeleOp for a 4-Motor Tank DriveTrain
- * Includes Driving and Rotating
- * <p>
- * Controls (GamePad1):
- * - Left Analog X:      N/A
- * - Left Analog Y:      Drives Robot Forward and Backwards
- * - Right Analog X:     Rotates Robot Left and Right
- * - Right Analog Y:     N/A
- * - Left Bumper:        Activate Intake + Sort to Left Side
- * - Left Trigger:       AimBot
- * - Right Bumper:       Activate Intake + Sort to Right Side
- * - Right Trigger:      Charge FlyWheel
- * - DPad Up:            Returns Function
- * - DPad Down:          Returns Function
- * - DPad Left:          Returns Function
- * - DPad Right:         Returns Function
- * - FaceButton Up:      Shoot Left Side
- * - FaceButton Down:    Returns Function
- * - FaceButton Left:    Returns Function
- * - FaceButton Right:   Shoot Right Side
- *
- * @Author Gurtej Singh
- */
 
 @TeleOp(name = "BLUE", group = "TeleOp")
 public class TeleOpBlue extends LinearOpMode {
@@ -74,9 +43,6 @@ public class TeleOpBlue extends LinearOpMode {
         robot.vision.setPipeline(PipeLine);
 
         double drive, rotate;
-
-        telemetry.addLine("Status: Initialized. Ready to start.");
-        telemetry.update();
 
         waitForStart();
 
