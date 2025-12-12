@@ -2,14 +2,10 @@ package TeleOp;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 import Systems.Robot;
 
@@ -40,16 +36,15 @@ import Systems.Robot;
  */
 
 @TeleOp(name = "BLUE", group = "TeleOp")
+@Disabled
 public class TeleOpBlue extends LinearOpMode {
 
     // Robot Instance
     private final Robot robot = new Robot();
 
     // FlyWheel Variables
-    private static double targetRPS = 0.0;
-    private static final double farTargetRPS = 53.5;
-    private static final double closeTargetRPS = 48.5;
-    private static final double TicksPerRev = 28.0;
+    private static final double targetRPS = 53.5;
+    private static final double TicksPerRev = 28.0; // FlyWheel Encoder Resolution
     private final double artifactHoldRight = 0.5;
     private final double artifactHoldLeft = 0.0;
     private final double artifactReleaseRight = 1.0;
@@ -60,18 +55,18 @@ public class TeleOpBlue extends LinearOpMode {
     private long rightGateOpenUntil = 0;
 
     // AprilTag / Vision Variables
-    private static final int PipeLine = 2;
     private static final double rotateGain = 0.0250;
     private static final double maxRotate = 0.75;
-    private static final double tagAreaThreshold = 0.8;
 
     @Override
     public void runOpMode() {
 
         robot.init(hardwareMap);
 
-        robot.vision.limeLight.setPollRateHz(15);
-        robot.vision.setPipeline(PipeLine);
+        // Active If Using LimeLight
+        FtcDashboard.getInstance().startCameraStream(robot.vision.limeLight, 30);
+        robot.vision.limeLight.setPollRateHz(90);
+        robot.vision.limeLight.pipelineSwitch(2);
 
         double drive, rotate;
 
@@ -82,42 +77,20 @@ public class TeleOpBlue extends LinearOpMode {
 
         while (opModeIsActive()) {
 
-            // LimeLight FailSafe
-            robot.vision.maintainPipeline();
-            if (gamepad1.leftStickButtonWasPressed() && gamepad1.rightStickButtonWasPressed()) {
-                robot.vision.reboot();
-            }
+            long now = System.currentTimeMillis();
 
             // AprilTag Targeting
             boolean activeTargeting = gamepad1.left_trigger >= 0.25;
             LLResult result = robot.vision.limeLight.getLatestResult();
-            boolean hasTarget = false;
-            double tagArea;
+            boolean hasTarget = result != null && result.isValid();
 
-            if (result != null && result.isValid()) {
-                java.util.List<LLResultTypes.FiducialResult> tags = result.getFiducialResults();
-                hasTarget = tags != null && !tags.isEmpty();
-            }
-
-            if (hasTarget) {
-                tagArea = result.getTa();
-                if (tagArea >= tagAreaThreshold) {
-                    targetRPS = closeTargetRPS;
-                } else {
-                    targetRPS = farTargetRPS;
-                }
-            } else {
-                targetRPS = farTargetRPS;
-            }
-
-            // AIMBOT
             if (activeTargeting && hasTarget) {
                 double headingError = result.getTx();
                 drive = -gamepad1.left_stick_y;
                 rotate = Range.clip(headingError * rotateGain, -maxRotate, maxRotate);
             } else {
                 drive = -gamepad1.left_stick_y;
-                rotate = -gamepad1.right_stick_x;
+                rotate = gamepad1.right_stick_x;
             }
 
             robot.driveTrain.tankDrive(drive, rotate);
@@ -155,21 +128,19 @@ public class TeleOpBlue extends LinearOpMode {
             }
 
             // Artifact Release Control
-            long now = System.currentTimeMillis();
-
             if (gamepad1.x) {
-                leftGateOpenUntil = Long.MAX_VALUE;
+                leftGateOpenUntil = 999999999;
                 leftShotEndTime = 0;
             } else if (gamepad1.xWasReleased()) {
-                leftGateOpenUntil = now + 100;
+                leftGateOpenUntil = now + 250;
                 leftShotEndTime = now + 1500;
             }
 
             if (gamepad1.b) {
-                rightGateOpenUntil = Long.MAX_VALUE;
+                rightGateOpenUntil = 999999999;
                 rightShotEndTime = 0;
             } else if (gamepad1.bWasReleased()) {
-                rightGateOpenUntil = now + 100;
+                rightGateOpenUntil = now + 250;
                 rightShotEndTime = now + 1500;
             }
 
@@ -190,6 +161,34 @@ public class TeleOpBlue extends LinearOpMode {
 
             robot.scoringMechanisms.leftRelease.setPosition(now < leftGateOpenUntil ? artifactReleaseLeft : artifactHoldLeft);
             robot.scoringMechanisms.rightRelease.setPosition(now < rightGateOpenUntil ? artifactReleaseRight : artifactHoldRight);
+
+            // Drive / AimBot
+            telemetry.addLine("=== Drive + AimBot ===");
+            telemetry.addData("Drive", "%5.2f", drive);
+            telemetry.addData("Rotate", "%5.2f", rotate);
+            telemetry.addData("AimBot Active", activeTargeting && hasTarget);
+            telemetry.addData("Tag In View", hasTarget);
+            telemetry.addLine();
+
+            // Intake / Sorter
+            telemetry.addLine("=== Intake + Sorter ===");
+            telemetry.addData("Roller Status", robot.scoringMechanisms.rollerIntake.getPower() > 0 ? "ACTIVE" : "IDLE");
+            String sorterStatus; if (gamepad1.left_bumper && !gamepad1.right_bumper) { sorterStatus = "LEFT"; } else if (gamepad1.right_bumper && !gamepad1.left_bumper) { sorterStatus = "RIGHT"; } else { sorterStatus = "IDLE"; }
+            telemetry.addData("Sorting", sorterStatus);
+            telemetry.addLine();
+
+            // Shooter / Gates
+            double averageFlywheelRps = (measuredFlywheelRps1 + measuredFlywheelRps2) / 2.0;
+            telemetry.addLine("=== Shooter + Gates ===");
+            telemetry.addData("Flywheel1 RPS", "%5.2f", measuredFlywheelRps1);
+            telemetry.addData("Flywheel2 RPS", "%5.2f", measuredFlywheelRps2);
+            telemetry.addData("Avg RPS", "%5.2f", averageFlywheelRps);
+            telemetry.addData("Target RPS", "%5.2f", targetRPS);
+            telemetry.addData("Shooter Status", ((averageFlywheelRps >= (targetRPS - 1.0)) && (gamepad1.right_trigger >= 0.05)) ? "READY" : "CHARGING");
+            telemetry.addData("Left Gate", (now < leftGateOpenUntil) ? "Open" : "Closed");
+            telemetry.addData("Right Gate", (now < rightGateOpenUntil) ? "Open" : "Closed");
+
+            telemetry.update();
         }
         robot.vision.limeLight.stop();
     }
