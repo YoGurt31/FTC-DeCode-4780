@@ -74,6 +74,7 @@ public final class TankDrive {
         public double inPerTick = 96.0 / 47673.0;
         public double trackWidthTicks = 3688.350404197826;
 
+        // TODO: TUNE THESE
         // feedforward parameters (in tick units)
         public double kS = 1.3496539362782056;
         public double kV = 0.00034097416123804735;
@@ -92,6 +93,7 @@ public final class TankDrive {
         public double ramseteZeta = 0.7; // in the range (0, 1)
         public double ramseteBBar = 2.0; // positive
 
+        // TODO: TUNE THESE
         // turn controller gains
         public double turnGain = 0.0;
         public double turnVelGain = 0.0;
@@ -261,8 +263,8 @@ public final class TankDrive {
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
         // TODO: Edit Based On Localizer
-        localizer = new TwoDeadWheelLocalizer(hardwareMap, lazyImu.get(), PARAMS.inPerTick, pose);
-//        localizer = new PinpointLocalizer(hardwareMap, PARAMS.inPerTick, pose);
+//        localizer = new TwoDeadWheelLocalizer(hardwareMap, lazyImu.get(), PARAMS.inPerTick, pose);
+        localizer = new PinpointLocalizer(hardwareMap, PARAMS.inPerTick, pose);
 
         FlightRecorder.write("TANK_PARAMS", PARAMS);
     }
