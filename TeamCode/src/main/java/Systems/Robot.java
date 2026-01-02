@@ -118,19 +118,14 @@ public class Robot {
             double dir = Math.signum(distanceInches);
             double drivePower = Math.abs(power) * dir;
 
-            if (Math.abs(distanceInches) < 1e-2 || Math.abs(power) < 1e-2) {
-                tankDrive(0.0, 0.0);
-                return;
-            }
-
             pinPoint.update();
             Pose2D start = pinPoint.getPosition();
             double startX = start.getX(DistanceUnit.INCH);
             double startY = start.getY(DistanceUnit.INCH);
             double targetHeadingDeg = start.getHeading(AngleUnit.DEGREES);
 
-            final double headingKp = 0.02;
-            final double maxCorrection = 0.35;
+            final double headingKp = 0.025;
+            final double maxCorrection = 0.50;
             final double threshold = 0.5;
 
             while (opMode.opModeIsActive()) {
@@ -147,7 +142,7 @@ public class Robot {
                 double remaining = Math.abs(distanceInches) - traveled;
 
                 double headingErr = wrapDeg(targetHeadingDeg - headingDeg);
-                double correction = Range.clip(headingErr * headingKp, -maxCorrection, maxCorrection);
+                double correction = Range.clip(-headingErr * headingKp, -maxCorrection, maxCorrection);
 
                 if (remaining <= threshold) break;
 
@@ -158,77 +153,52 @@ public class Robot {
             tankDrive(0.0, 0.0);
         }
 
-        public void turn(LinearOpMode opMode, String direction, double angleDeg) {
+
+        public void turnTo(LinearOpMode opMode, double targetHeadingDeg) {
             if (opMode == null) return;
             if (pinPoint == null) return;
 
-            if (Math.abs(angleDeg) < 1e-2) {
-                tankDrive(0.0, 0.0);
-                return;
-            }
+            while (targetHeadingDeg > 180.0) targetHeadingDeg -= 360.0;
+            while (targetHeadingDeg <= -180.0) targetHeadingDeg += 360.0;
 
-            double dir;
-            if (direction == null) {
-                dir = 1.0;
-            } else {
-                String d = direction.trim().toLowerCase();
-                if (d.startsWith("l")) dir = 1.0;
-                else if (d.startsWith("r")) dir = -1.0;
-                else dir = 1.0;
-            }
-
-            pinPoint.update();
-            double startHeadingDeg = pinPoint.getPosition().getHeading(AngleUnit.DEGREES);
-            double targetHeadingDeg = wrapDeg(startHeadingDeg + dir * angleDeg);
-
-            final double turnKp = 0.05;
-            final double minRotate = 0.10;
-            final double maxRotate = 0.50;
+            final double headingKp = 0.030;
+            final double maxRotatePower = Math.abs(0.8);
+            final double minRotatePower = 0.08;
             final double threshold = 1.0;
+            final long settleMs = 200;
+            long settleStart = -1;
 
             while (opMode.opModeIsActive()) {
                 pinPoint.update();
-                double headingDeg = pinPoint.getPosition().getHeading(AngleUnit.DEGREES);
+                Pose2D cur = pinPoint.getPosition();
+                double headingDeg = cur.getHeading(AngleUnit.DEGREES);
+
                 double err = wrapDeg(targetHeadingDeg - headingDeg);
 
-                if (Math.abs(err) <= threshold) break;
+                if (Math.abs(err) <= threshold) {
+                    if (settleStart < 0) settleStart = System.currentTimeMillis();
+                    if (System.currentTimeMillis() - settleStart >= settleMs) {
+                        break;
+                    }
+                } else {
+                    settleStart = -1;
+                }
 
-                double rotate = Range.clip(err * turnKp, -maxRotate, maxRotate);
+                double rotate = Range.clip(-err * headingKp, -maxRotatePower, maxRotatePower);
 
-                if (rotate > 0 && Math.abs(rotate) < minRotate) rotate = minRotate;
-                if (rotate < 0 && Math.abs(rotate) < minRotate) rotate = -minRotate;
+                double absErr = Math.abs(err);
+                double scaledMax = maxRotatePower;
+                if (absErr < 20.0) scaledMax = Math.min(scaledMax, 0.25);
+                if (absErr < 8.0)  scaledMax = Math.min(scaledMax, 0.15);
+                rotate = Range.clip(rotate, -scaledMax, scaledMax);
 
-                tankDrive(0.0, rotate);
-                opMode.idle();
-            }
+                if (absErr > 3.0 && Math.abs(rotate) < minRotatePower) {
+                    rotate = minRotatePower * Math.signum(rotate);
+                }
 
-            tankDrive(0.0, 0.0);
-        }
-
-        public void turnTo(LinearOpMode opMode, double headingDeg) {
-            if (opMode == null) return;
-            if (pinPoint == null) return;
-
-            pinPoint.update();
-            double targetHeadingDeg = wrapDeg(headingDeg);
-
-            final double turnKp = 0.05;
-            final double minRotate = 0.10;
-            final double maxRotate = 0.50;
-            final double thresholdDeg = 1.0;
-
-            while (opMode.opModeIsActive()) {
-                pinPoint.update();
-                double currentHeadingDeg = pinPoint.getPosition().getHeading(AngleUnit.DEGREES);
-
-                double errDeg = wrapDeg(targetHeadingDeg - currentHeadingDeg);
-
-                if (Math.abs(errDeg) <= thresholdDeg) break;
-
-                double rotate = Range.clip(errDeg * turnKp, -maxRotate, maxRotate);
-
-                if (rotate > 0 && Math.abs(rotate) < minRotate) rotate = minRotate;
-                if (rotate < 0 && Math.abs(rotate) < minRotate) rotate = -minRotate;
+                if (absErr <= threshold) {
+                    rotate = 0.0;
+                }
 
                 tankDrive(0.0, rotate);
                 opMode.idle();
@@ -236,7 +206,7 @@ public class Robot {
 
             tankDrive(0.0, 0.0);
         }
-        
+
         private static double wrapDeg(double deg) {
             while (deg > 180.0) deg -= 360.0;
             while (deg <= -180.0) deg += 360.0;
@@ -265,7 +235,7 @@ public class Robot {
             sorterIntake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
             double F = 17.75;
-            double P = 2 * F;
+            double P = 2.5 * F;
             double I = 00.000;
             double D = 00.000;
 
@@ -289,8 +259,8 @@ public class Robot {
 
         // VARIABLES
         public double targetRPS = 0.0;
-        public final double farTargetRPS = 55;
-        public final double closeTargetRPS = 50;
+        public final double farTargetRPS = 52.5;
+        public final double closeTargetRPS = 46.5;
         public final double TicksPerRev = 28.0;
         public final double artifactHoldRight = 0.5;
         public final double artifactHoldLeft = 0.0;

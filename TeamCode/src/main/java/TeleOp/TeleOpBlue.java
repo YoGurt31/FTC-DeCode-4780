@@ -83,6 +83,13 @@ public class TeleOpBlue extends LinearOpMode {
             }
 
             // FlyWheel Control
+            double measuredFlywheelRps1 = (Math.abs(robot.scoringMechanisms.flyWheel1.getVelocity()) / robot.scoringMechanisms.TicksPerRev);
+            double measuredFlywheelRps2 = (Math.abs(robot.scoringMechanisms.flyWheel2.getVelocity()) / robot.scoringMechanisms.TicksPerRev);
+
+            double averageFlywheelRps = (measuredFlywheelRps1 + measuredFlywheelRps2) / 2.0;
+            boolean shooterCharged = (gamepad1.right_trigger >= 0.05);
+            boolean shooterReady = shooterCharged && (Math.abs(averageFlywheelRps - robot.scoringMechanisms.targetRPS) <= 5);
+
             if (gamepad1.right_trigger >= 0.05) {
                 robot.scoringMechanisms.flyWheel1.setVelocity(robot.scoringMechanisms.targetRPS * robot.scoringMechanisms.TicksPerRev);
                 robot.scoringMechanisms.flyWheel2.setVelocity(robot.scoringMechanisms.targetRPS * robot.scoringMechanisms.TicksPerRev);
@@ -94,20 +101,40 @@ public class TeleOpBlue extends LinearOpMode {
             // Artifact Release Control
             long now = System.currentTimeMillis();
 
-            if (gamepad1.x) {
-                robot.scoringMechanisms.leftGateOpenUntil = Long.MAX_VALUE;
-                robot.scoringMechanisms.leftShotEndTime = 0;
-            } else if (gamepad1.xWasReleased()) {
-                robot.scoringMechanisms.leftGateOpenUntil = now + 100;
-                robot.scoringMechanisms.leftShotEndTime = now + 1500;
+            if (gamepad1.xWasPressed()) {
+                if (shooterReady) {
+                    robot.scoringMechanisms.leftGateOpenUntil = Long.MAX_VALUE;
+                    robot.scoringMechanisms.leftShotEndTime = 0;
+                }
             }
 
-            if (gamepad1.b) {
+            if (gamepad1.x && robot.scoringMechanisms.leftGateOpenUntil == Long.MAX_VALUE) {
+                robot.scoringMechanisms.leftGateOpenUntil = Long.MAX_VALUE;
+            }
+
+            if (gamepad1.xWasReleased()) {
+                if (robot.scoringMechanisms.leftGateOpenUntil == Long.MAX_VALUE) {
+                    robot.scoringMechanisms.leftGateOpenUntil = now + 100;
+                    robot.scoringMechanisms.leftShotEndTime = now + 1500;
+                }
+            }
+
+            if (gamepad1.bWasPressed()) {
+                if (shooterReady) {
+                    robot.scoringMechanisms.rightGateOpenUntil = Long.MAX_VALUE;
+                    robot.scoringMechanisms.rightShotEndTime = 0;
+                }
+            }
+
+            if (gamepad1.b && robot.scoringMechanisms.rightGateOpenUntil == Long.MAX_VALUE) {
                 robot.scoringMechanisms.rightGateOpenUntil = Long.MAX_VALUE;
-                robot.scoringMechanisms.rightShotEndTime = 0;
-            } else if (gamepad1.bWasReleased()) {
-                robot.scoringMechanisms.rightGateOpenUntil = now + 100;
-                robot.scoringMechanisms.rightShotEndTime = now + 1500;
+            }
+
+            if (gamepad1.bWasReleased()) {
+                if (robot.scoringMechanisms.rightGateOpenUntil == Long.MAX_VALUE) {
+                    robot.scoringMechanisms.rightGateOpenUntil = now + 100;
+                    robot.scoringMechanisms.rightShotEndTime = now + 1500;
+                }
             }
 
             boolean leftShotActive = now < robot.scoringMechanisms.leftShotEndTime;
@@ -125,8 +152,8 @@ public class TeleOpBlue extends LinearOpMode {
                 }
             }
 
-            robot.scoringMechanisms.leftRelease.setPosition(now < robot.scoringMechanisms.leftGateOpenUntil ? robot.scoringMechanisms.artifactReleaseLeft : robot.scoringMechanisms.artifactHoldLeft);
-            robot.scoringMechanisms.rightRelease.setPosition(now < robot.scoringMechanisms.rightGateOpenUntil ? robot.scoringMechanisms.artifactReleaseRight : robot.scoringMechanisms.artifactHoldRight);
+            robot.scoringMechanisms.leftRelease.setPosition((now < robot.scoringMechanisms.leftGateOpenUntil) ? robot.scoringMechanisms.artifactReleaseLeft : robot.scoringMechanisms.artifactHoldLeft);
+            robot.scoringMechanisms.rightRelease.setPosition((now < robot.scoringMechanisms.rightGateOpenUntil) ? robot.scoringMechanisms.artifactReleaseRight : robot.scoringMechanisms.artifactHoldRight);
 
             // GearShifter / Elevator Controller
             if (gamepad1.share && gamepad1.options) {

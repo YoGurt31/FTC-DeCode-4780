@@ -3,6 +3,7 @@ package TeleOp;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
@@ -39,7 +40,7 @@ import Systems.Robot;
  */
 
 @TeleOp(name = "TestTank", group = "TeleOp")
-//@Disabled
+@Disabled
 public class TeleOpBasic extends LinearOpMode {
 
     // Robot Instance
@@ -121,8 +122,9 @@ public class TeleOpBasic extends LinearOpMode {
             }
 
             // FlyWheel Control
-            double measuredFlywheelRps1 = (Math.abs(robot.scoringMechanisms.flyWheel1.getVelocity()) / robot.scoringMechanisms.TicksPerRev);
-            double measuredFlywheelRps2 = (Math.abs(robot.scoringMechanisms.flyWheel2.getVelocity()) / robot.scoringMechanisms.TicksPerRev);
+            double measuredFlywheelRps1 = robot.scoringMechanisms.flyWheel1.getVelocity() / robot.scoringMechanisms.TicksPerRev;
+            double measuredFlywheelRps2 = robot.scoringMechanisms.flyWheel2.getVelocity() / robot.scoringMechanisms.TicksPerRev;
+            double averageFlywheelRps = (measuredFlywheelRps1 + measuredFlywheelRps2) / 2;
 
             if (gamepad1.right_trigger >= 0.05) {
                 robot.scoringMechanisms.flyWheel1.setVelocity(robot.scoringMechanisms.targetRPS * robot.scoringMechanisms.TicksPerRev);
@@ -203,7 +205,6 @@ public class TeleOpBasic extends LinearOpMode {
                 telemetry.addLine();
 
                 // Shooter / Gates
-                double averageFlywheelRps = (measuredFlywheelRps1 + measuredFlywheelRps2) / 2.0;
                 telemetry.addLine("=== Shooter + Gates ===");
                 telemetry.addData("Flywheel1 RPS", "%5.2f", measuredFlywheelRps1);
                 telemetry.addData("Flywheel2 RPS", "%5.2f", measuredFlywheelRps2);

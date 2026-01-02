@@ -4,6 +4,7 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
@@ -11,6 +12,7 @@ import com.qualcomm.robotcore.util.Range;
 import Systems.Robot;
 
 @Autonomous(name = "AutoRed", group = "Auton")
+@Disabled
 public class AutonRed extends LinearOpMode {
 
     // Robot Instance
@@ -25,31 +27,6 @@ public class AutonRed extends LinearOpMode {
         ElapsedTime timer = new ElapsedTime();
         timer.reset();
         while (opModeIsActive() && timer.seconds() < sec) {
-            idle();
-        }
-    }
-
-    private void chargeFlywheel() {
-        double targetTicksPerSec = robot.scoringMechanisms.targetRPS * robot.scoringMechanisms.TicksPerRev;
-
-        robot.scoringMechanisms.flyWheel1.setVelocity(targetTicksPerSec);
-        robot.scoringMechanisms.flyWheel2.setVelocity(targetTicksPerSec);
-
-        ElapsedTime timer = new ElapsedTime();
-        timer.reset();
-
-        while (opModeIsActive() && timer.seconds() < 2.0) {
-            double measuredRps =
-                    Math.abs(robot.scoringMechanisms.flyWheel1.getVelocity()) / robot.scoringMechanisms.TicksPerRev;
-
-            telemetry.addLine("=== Flywheel Charge ===");
-            telemetry.addData("Flywheel RPS", measuredRps);
-            telemetry.addData("Target RPS", robot.scoringMechanisms.targetRPS);
-            telemetry.update();
-
-            if (measuredRps >= (robot.scoringMechanisms.targetRPS - 0.5)) {
-                break;
-            }
             idle();
         }
     }
@@ -258,5 +235,35 @@ public class AutonRed extends LinearOpMode {
 
         robot.scoringMechanisms.rollerIntake.setPower(0.0);
         robot.scoringMechanisms.sorterIntake.setPower(0.0);
+    }
+
+    private void chargeFlywheel() {
+        double targetTicksPerSec = robot.scoringMechanisms.farTargetRPS * robot.scoringMechanisms.TicksPerRev;
+
+        robot.scoringMechanisms.flyWheel1.setVelocity(targetTicksPerSec);
+        robot.scoringMechanisms.flyWheel2.setVelocity(targetTicksPerSec);
+
+        ElapsedTime timer = new ElapsedTime();
+        timer.reset();
+
+        while (opModeIsActive() && timer.seconds() < 3.0) {
+            double v1 = robot.scoringMechanisms.flyWheel1.getVelocity();
+            double v2 = robot.scoringMechanisms.flyWheel2.getVelocity();
+            double rps1 = Math.abs(v1) / robot.scoringMechanisms.TicksPerRev;
+            double rps2 = Math.abs(v2) / robot.scoringMechanisms.TicksPerRev;
+            double measuredRps = (rps1 + rps2) / 2.0;
+
+            telemetry.addLine("=== Flywheel Charge ===");
+            telemetry.addData("Target", "%.2f RPS (%.0f ticks/s)", robot.scoringMechanisms.farTargetRPS, targetTicksPerSec);
+            telemetry.addData("Fly1", "v=%.0f ticks/s -> %.2f RPS", v1, rps1);
+            telemetry.addData("Fly2", "v=%.0f ticks/s -> %.2f RPS", v2, rps2);
+            telemetry.addData("Avg", "%.2f RPS", measuredRps);
+            telemetry.update();
+
+            if (measuredRps >= (robot.scoringMechanisms.farTargetRPS - 0.5)) {
+                break;
+            }
+            idle();
+        }
     }
 }

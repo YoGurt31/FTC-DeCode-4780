@@ -17,39 +17,14 @@ public class AutonBlueV2 extends LinearOpMode {
     private final Robot robot = new Robot();
 
     // Drive Constants
-    private static final double drivePower = 0.25;
-    private static final double rotatePower = 0.10;
+    private static final double drivePower = 0.50;
+    private static final double rotatePower = 0.25;
 
     // Non-Blocking Sleep
     private void waitSec(double sec) {
         ElapsedTime timer = new ElapsedTime();
         timer.reset();
         while (opModeIsActive() && timer.seconds() < sec) {
-            idle();
-        }
-    }
-
-    private void chargeFlywheel() {
-        double targetTicksPerSec = robot.scoringMechanisms.targetRPS * robot.scoringMechanisms.TicksPerRev;
-
-        robot.scoringMechanisms.flyWheel1.setVelocity(targetTicksPerSec);
-        robot.scoringMechanisms.flyWheel2.setVelocity(targetTicksPerSec);
-
-        ElapsedTime timer = new ElapsedTime();
-        timer.reset();
-
-        while (opModeIsActive() && timer.seconds() < 2.0) {
-            double measuredRps =
-                    Math.abs(robot.scoringMechanisms.flyWheel1.getVelocity()) / robot.scoringMechanisms.TicksPerRev;
-
-            telemetry.addLine("=== Flywheel Charge ===");
-            telemetry.addData("Flywheel RPS", measuredRps);
-            telemetry.addData("Target RPS", robot.scoringMechanisms.targetRPS);
-            telemetry.update();
-
-            if (measuredRps >= (robot.scoringMechanisms.targetRPS - 0.5)) {
-                break;
-            }
             idle();
         }
     }
@@ -88,13 +63,13 @@ public class AutonBlueV2 extends LinearOpMode {
         robot.vision.setPipeline(robot.vision.BLUE);
 
         // TODO: Sequence
-        robot.driveTrain.driveDistance(this, 12, drivePower);
-        aimAtTag(20);
+        robot.driveTrain.driveDistance(this, 6, drivePower);
         chargeFlywheel();
+        aimAtTag(24);
+        waitUntilReady(2.5);
         shootMotif(motif);
-        sleep(1000);
-        robot.driveTrain.turnTo(this, 0);
-        robot.driveTrain.driveDistance(this, 48, drivePower);
+        stopFlywheel();
+        robot.driveTrain.driveDistance(this, 12, drivePower);
 
         // Shutdown
         robot.scoringMechanisms.flyWheel1.setPower(0.0);
@@ -142,7 +117,7 @@ public class AutonBlueV2 extends LinearOpMode {
         robot.driveTrain.tankDrive(0.0, 0.0);
 
         long alignStart = System.currentTimeMillis();
-        final long alignmentTimeOut = 3000;
+        final long alignmentTimeOut = 3500;
 
         long lastSeenCorrectTagTime = System.currentTimeMillis();
 
@@ -257,5 +232,50 @@ public class AutonBlueV2 extends LinearOpMode {
 
         robot.scoringMechanisms.rollerIntake.setPower(0.0);
         robot.scoringMechanisms.sorterIntake.setPower(0.0);
+    }
+
+    private void intakeLeft() {
+        robot.scoringMechanisms.rollerIntake.setPower(1.0);
+        robot.scoringMechanisms.sorterIntake.setPower(1.0);
+    }
+
+    private void intakeRight() {
+        robot.scoringMechanisms.rollerIntake.setPower(1.0);
+        robot.scoringMechanisms.sorterIntake.setPower(-1.0);
+    }
+
+    private void stopIntake() {
+        robot.scoringMechanisms.rollerIntake.setPower(0.0);
+        robot.scoringMechanisms.sorterIntake.setPower(0.0);
+    }
+
+    private void chargeFlywheel() {
+        double targetTicksPerSec = robot.scoringMechanisms.farTargetRPS * robot.scoringMechanisms.TicksPerRev;
+        robot.scoringMechanisms.flyWheel1.setVelocity(targetTicksPerSec);
+        robot.scoringMechanisms.flyWheel2.setVelocity(targetTicksPerSec);
+    }
+
+    private void stopFlywheel() {
+        robot.scoringMechanisms.flyWheel1.setPower(0.0);
+        robot.scoringMechanisms.flyWheel2.setPower(0.0);
+    }
+
+    private boolean isReady() {
+        double v1 = robot.scoringMechanisms.flyWheel1.getVelocity();
+        double v2 = robot.scoringMechanisms.flyWheel2.getVelocity();
+        double rps1 = Math.abs(v1) / robot.scoringMechanisms.TicksPerRev;
+        double rps2 = Math.abs(v2) / robot.scoringMechanisms.TicksPerRev;
+        double measuredRps = (rps1 + rps2) / 2.0;
+
+        return measuredRps >= (robot.scoringMechanisms.farTargetRPS - 0.5);
+    }
+
+    private void waitUntilReady(double timeoutSec) {
+        ElapsedTime timer = new ElapsedTime();
+        timer.reset();
+        while (opModeIsActive() && timer.seconds() < timeoutSec) {
+            if (isReady()) break;
+            idle();
+        }
     }
 }

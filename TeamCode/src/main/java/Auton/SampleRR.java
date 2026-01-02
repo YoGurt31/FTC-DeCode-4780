@@ -5,11 +5,13 @@ import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import RoadRunner.TankDrive;
 
 @Config
 @Autonomous(name = "SampleRR", group = "Autonomous")
+@Disabled
 public class SampleRR extends LinearOpMode {
 
     @Override
